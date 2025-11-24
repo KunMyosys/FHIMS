@@ -266,7 +266,7 @@ const menuCategories: MenuCategory[] = [
     color: 'bg-sky-500',
     items: [
       { 
-        label: 'City & Country Master', 
+        label: 'City & Country Master',  
         icon: <Globe className="w-4 h-4" />, 
         iconColor: 'text-green-600',
         iconBg: 'bg-green-50',

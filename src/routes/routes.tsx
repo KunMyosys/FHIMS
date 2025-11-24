@@ -20,6 +20,8 @@ import { MannatNiyazDashboardPage } from "../pages/MannatNiyazDashboardPage";
 import { MannatNiyazReceiptViewPage } from "../pages/MannatNiyazReceiptViewPage";
 import { RoleManagementPage } from "../pages/RoleManagementPage";
 import { UserManagementPage } from "../pages/UserManagementPage";
+import { CountryCityMasterPage } from "../pages/CountryCityMasterPage";
+import { DocumentMasterPage } from "../pages/DocumentMasterPage";
 
 /* ✅ Protected route wrapper */
 const ProtectedRoute = ({ children }: { children: React.JSX.Element }) => {
@@ -148,6 +150,34 @@ const AppRoutes = () => {
               onNavigate={handleNavigate}
             >
               <UserManagementPage />
+            </DashboardLayoutNew>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/country-city-master"
+        element={
+          <ProtectedRoute>
+            <DashboardLayoutNew
+              currentPage="country-city-master"
+              onNavigate={handleNavigate}
+            >
+              <CountryCityMasterPage />
+            </DashboardLayoutNew>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/document-master"
+        element={
+          <ProtectedRoute>
+            <DashboardLayoutNew
+              currentPage="document-master"
+              onNavigate={handleNavigate}
+            >
+              <DocumentMasterPage />
             </DashboardLayoutNew>
           </ProtectedRoute>
         }
