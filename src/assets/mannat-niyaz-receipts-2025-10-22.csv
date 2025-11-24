@@ -1,0 +1,4 @@
+Receipt Number,Location,User,Date,Mumeen Name,ITS No,Phone,Email,Head,Currency,Unit Rate,Units,Amount,Discount,Total,Status
+"20251022-KRB-01","KRB","User1","10/22/2025","Ahmed Ali Hussain","12345678","+44 7700 900000","ahmed.ali@example.com","Zabihat","GBP","50","2","100","0","100","Pending"
+"20251022-KRB-02","KRB","User1","10/22/2025","Fatima Hassan Zahra","23456789","+1 555 0100","fatima.hassan@example.com","Mannat","USD","20","5","100","10","90","Pending"
+"20251022-KRB-04","KRB","User1","10/22/2025","Ali Akbar Rizvi","56789012","+964 770 123 4567","ali.akbar@example.com","Mannat","IRQ","25000","3","75000","0","75000","Pending"

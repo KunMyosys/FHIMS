@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import custom global CSS last */
+@import './globals.css';
+
+[data-sonner-toast] {
+  z-index: 9999 !important;
+}
