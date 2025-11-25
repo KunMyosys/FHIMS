@@ -22,6 +22,7 @@ import { RoleManagementPage } from "../pages/RoleManagementPage";
 import { UserManagementPage } from "../pages/UserManagementPage";
 import { CountryCityMasterPage } from "../pages/CountryCityMasterPage";
 import { DocumentMasterPage } from "../pages/DocumentMasterPage";
+import { PortMasterPage } from "../pages/PortMasterPage";
 
 /* ✅ Protected route wrapper */
 const ProtectedRoute = ({ children }: { children: React.JSX.Element }) => {
@@ -178,6 +179,20 @@ const AppRoutes = () => {
               onNavigate={handleNavigate}
             >
               <DocumentMasterPage />
+            </DashboardLayoutNew>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/port-master"
+        element={
+          <ProtectedRoute>
+            <DashboardLayoutNew
+              currentPage="port-master"
+              onNavigate={handleNavigate}
+            >
+              <PortMasterPage />
             </DashboardLayoutNew>
           </ProtectedRoute>
         }
