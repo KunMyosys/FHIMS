@@ -386,31 +386,31 @@ export const CountryCityMasterPage = () => {
     toast.success('Country status updated successfully');
   };
 
-//   const handleDeleteCity = (countryId: string, cityId: string) => {
-//     if (!confirm('Are you sure you want to delete this city?')) return;
+  // const handleDeleteCity = (countryId: string, cityId: string) => {
+  //   if (!confirm('Are you sure you want to delete this city?')) return;
 
-//     const updatedCountries = countries.map(country =>
-//       country.id === countryId
-//         ? { ...country, cities: country.cities.filter(city => city.id !== cityId) }
-//         : country
-//     );
+  //   const updatedCountries = countries.map(country =>
+  //     country.id === countryId
+  //       ? { ...country, cities: country.cities.filter(city => city.id !== cityId) }
+  //       : country
+  //   );
 
-//     setCountries(updatedCountries);
-//     toast.success('City deleted successfully');
-//   };
+  //   setCountries(updatedCountries);
+  //   toast.success('City deleted successfully');
+  // };
 
-//   const handleDeleteCountry = (countryId: string) => {
-//     const country = countries.find(c => c.id === countryId);
-//     if (country && country.cities.length > 0) {
-//       toast.error('Cannot delete country with existing cities. Please remove all cities first.');
-//       return;
-//     }
+  // const handleDeleteCountry = (countryId: string) => {
+  //   const country = countries.find(c => c.id === countryId);
+  //   if (country && country.cities.length > 0) {
+  //     toast.error('Cannot delete country with existing cities. Please remove all cities first.');
+  //     return;
+  //   }
 
-//     if (!confirm('Are you sure you want to delete this country?')) return;
+  //   if (!confirm('Are you sure you want to delete this country?')) return;
 
-//     setCountries(countries.filter(c => c.id !== countryId));
-//     toast.success('Country deleted successfully');
-//   };
+  //   setCountries(countries.filter(c => c.id !== countryId));
+  //   toast.success('Country deleted successfully');
+  // };
 
   const handleEditCountry = (country: Country) => {
     setEditingCountry(country);
@@ -503,18 +503,18 @@ export const CountryCityMasterPage = () => {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
-        active: "bg-green-100 text-green-700 border-green-300",
-        inactive: "bg-gray-100 text-gray-700 border-gray-300",
-        deprecated: "bg-orange-100 text-orange-700 border-orange-300",
+      active: "bg-green-100 text-green-700 border-green-300",
+      inactive: "bg-gray-100 text-gray-700 border-gray-300",
+      deprecated: "bg-orange-100 text-orange-700 border-orange-300",
     };
 
     return (
-        <Badge
+      <Badge
         variant="outline"
         className={variants[status] || variants.active}
-        >
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
-        </Badge>
+      </Badge>
     );
   };
 
@@ -568,7 +568,7 @@ export const CountryCityMasterPage = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-blue-200 bg-blue-50/50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -645,9 +645,9 @@ export const CountryCityMasterPage = () => {
         </CardContent>
       </Card>
 
-      {/* Countries Table */}
-      <Card className=" bg-white border-[#5B9BD5]/30">
-        <CardHeader className="border-b bg-gradient-to-r from-sky-50 to-blue-50">
+      {/* Countries Table - Desktop */}
+      <Card className="bg-white border-[#5B9BD5]/30 hidden lg:block">
+        <CardHeader className="border-b bg-gradient-to-r from-sky-50 to-blue-50" style={{ paddingBottom: "24px"}}>
           <CardTitle style={{ color: '#5B9BD5' }}>Countries & Cities</CardTitle>
           <CardDescription>
             {filteredCountries.length} countr{filteredCountries.length !== 1 ? 'ies' : 'y'} found
@@ -790,6 +790,128 @@ export const CountryCityMasterPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Mobile Cards - same data & actions, single codebase */}
+      <div className="space-y-4 lg:hidden">
+        {filteredCountries.length === 0 ? (
+          <Card className="border-[#5B9BD5]/30">
+            <CardContent className="p-8 text-center">
+              <p className="text-gray-500">No countries found</p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredCountries.map((country) => (
+            <Card key={country.id} className="border-[#5B9BD5]/30">
+              <CardHeader className="pb-3 bg-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center flex-shrink-0">
+                      <Globe className="w-5 h-5 text-[#5B9BD5]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base text-gray-900 truncate">
+                        {country.displayName || country.name}
+                      </CardTitle>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="border-[#5B9BD5]/30 text-[#5B9BD5] text-xs">
+                          {country.code}
+                        </Badge>
+                        {getStatusBadge(country.status)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleEditCountry(country)}
+                      className="text-[#5B9BD5] hover:bg-white h-8 w-8 p-0"
+                      title="Edit country"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      // onClick={() => handleDeleteCountry(country.id)}
+                      className="text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                      title="Delete country"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-3 space-y-2">
+                <div className="text-xs text-gray-600 mb-2">
+                  Cities ({country.cities.length})
+                </div>
+
+                {country.cities.length === 0 ? (
+                  <div className="flex items-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <p className="text-sm text-gray-500 italic">No cities added yet</p>
+                  </div>
+                ) : (
+                  country.cities.map((city) => (
+                    <div key={city.id} className="p-3 bg-white rounded-lg border border-sky-200">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 flex-1 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <MapPin className="w-3.5 h-3.5 text-[#5B9BD5]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">
+                              {city.displayName || city.name}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <Badge variant="outline" className="text-xs border-[#5B9BD5]/30 text-[#5B9BD5]">
+                                {city.code}
+                              </Badge>
+                              {getStatusBadge(city.status)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEditCity(country, city)}
+                            className="text-[#5B9BD5] hover:bg-white h-7 w-7 p-0"
+                            title="Edit city"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            // onClick={() => handleDeleteCity(country.id, city.id)}
+                            className="text-red-600 hover:bg-red-50 h-7 w-7 p-0"
+                            title="Delete city"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => { setSelectedCountry(country); setIsAddCityDialogOpen(true); }}
+                  className="w-full text-[#5B9BD5] hover:bg-sky-100 border border-dashed border-sky-300 py-2 text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  Add City
+                </Button>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
 
       {/* Add Country Dialog */}
       <Dialog open={isAddCountryDialogOpen} onOpenChange={setIsAddCountryDialogOpen}>
