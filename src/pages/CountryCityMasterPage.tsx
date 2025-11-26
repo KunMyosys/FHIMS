@@ -41,6 +41,8 @@ import {
   Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { addCity, addCountry, ApiCity, ApiCountry, getAllCities, getAllCountries, getCountriesWithCities } from "../services/countryCityService";
+
 
 interface City {
   id: string;
@@ -174,20 +176,7 @@ const WORLD_COUNTRIES = [
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 // Mock cities database by country code
-const CITIES_BY_COUNTRY: Record<string, string[]> = {
-  'IQ': ['Baghdad', 'Basra', 'Karbala', 'Najaf', 'Erbil', 'Mosul', 'Sulaymaniyah', 'Kirkuk'],
-  'SA': ['Riyadh', 'Jeddah', 'Mecca', 'Medina', 'Dammam', 'Khobar', 'Tabuk', 'Abha'],
-  'IR': ['Tehran', 'Mashhad', 'Isfahan', 'Qom', 'Shiraz', 'Tabriz', 'Karaj', 'Ahvaz'],
-  'AE': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'],
-  'IN': ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad'],
-  'PK': ['Karachi', 'Lahore', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Multan', 'Peshawar', 'Quetta'],
-  'US': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego'],
-  'GB': ['London', 'Birmingham', 'Manchester', 'Leeds', 'Liverpool', 'Sheffield', 'Bristol', 'Edinburgh'],
-  'EG': ['Cairo', 'Alexandria', 'Giza', 'Shubra El Kheima', 'Port Said', 'Suez', 'Luxor', 'Aswan'],
-  'TR': ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep'],
-  'FR': ['Paris', 'Marseille', 'Lyon', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 'Montpellier'],
-  'DE': ['Berlin', 'Hamburg', 'Munich', 'Cologne', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 'Dortmund'],
-};
+
 
 export const CountryCityMasterPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -201,42 +190,14 @@ export const CountryCityMasterPage = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
-  // Mock data - initially loaded from "API"
-  const [countries, setCountries] = useState<Country[]>([
-    {
-      id: '1',
-      name: 'Iraq',
-      code: 'IQ',
-      status: 'active',
-      cities: [
-        { id: '1-1', name: 'Karbala', code: 'KRB', status: 'active' },
-        { id: '1-2', name: 'Najaf', code: 'NJF', status: 'active' },
-        { id: '1-3', name: 'Baghdad', code: 'BGD', status: 'active' },
-      ]
-    },
-    {
-      id: '2',
-      name: 'Saudi Arabia',
-      displayName: 'Kingdom of Saudi Arabia',
-      code: 'SA',
-      status: 'active',
-      cities: [
-        { id: '2-1', name: 'Mecca', displayName: 'Makkah', code: 'MKA', status: 'active' },
-        { id: '2-2', name: 'Medina', displayName: 'Madinah', code: 'MED', status: 'active' },
-        { id: '2-3', name: 'Jeddah', code: 'JED', status: 'active' },
-      ]
-    },
-    {
-      id: '3',
-      name: 'Iran',
-      code: 'IR',
-      status: 'active',
-      cities: [
-        { id: '3-1', name: 'Mashhad', code: 'MHD', status: 'active' },
-        { id: '3-2', name: 'Qom', code: 'QOM', status: 'active' },
-      ]
-    },
-  ]);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [allCities, setAllCities] = useState<ApiCity[]>([]);
+
+  const [apiCountryList, setApiCountryList] = useState<ApiCountry[]>([]);
+
+
 
   // Form state for adding country
   const [countryFormData, setCountryFormData] = useState({
@@ -271,11 +232,71 @@ export const CountryCityMasterPage = () => {
 
   const [availableCities, setAvailableCities] = useState<string[]>([]);
 
+  useEffect(() => {
+    loadDataFromAPI();
+    loadCitiesFromAPI();
+    }, []);
+
+  const loadDataFromAPI = async () => {
+    try {
+      setLoading(true);
+
+      const apiData = await getCountriesWithCities();
+
+      const mapped = apiData.map((c: any) => ({
+        id: String(c.countryId),
+        name: c.countryName,
+        displayName: undefined, // backend doesn't provide this
+        code: c.iso2,           // using ISO2 as country code (your UI expects 2 letters)
+        status: "active",       // backend has no status → default active
+        cities: c.cities.map((city: any) => ({
+          id: String(city.cityId),
+          name: city.cityName,
+          displayName: undefined, // backend doesn't provide
+          code: "TEST",           // backend does not return city code → placeholder
+          status: "active",       // default active
+        })),
+      }));
+
+      setCountries(mapped);
+    } catch (error) {
+      console.error("Failed to load countries:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCitiesFromAPI = async () => {
+    try {
+      const data = await getAllCities();
+      setAllCities(data);
+    } catch (err) {
+      console.error("Failed to load cities:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadCountriesFromAPI();
+  }, []);
+
+  const loadCountriesFromAPI = async () => {
+    try {
+      const data = await getAllCountries();
+      setApiCountryList(data); // For dropdown
+    } catch (error) {
+      console.error("Failed to load countries:", error);
+    }
+  };
+
   // Load available cities when country is selected for adding city
   useEffect(() => {
     if (selectedCountry) {
-      const cities = CITIES_BY_COUNTRY[selectedCountry.code] || [];
-      setAvailableCities(cities.sort());
+      const cities = allCities
+        .filter(c => c.countryId === Number(selectedCountry.id))
+        .map(c => c.cityName)
+        .sort();
+
+      setAvailableCities(cities);
     }
   }, [selectedCountry]);
 
@@ -289,75 +310,81 @@ export const CountryCityMasterPage = () => {
     )
   );
 
-  const handleAddCountry = () => {
+  const handleAddCountry = async () => {
     if (!countryFormData.selectedCountry) {
-      toast.error('Please select a country');
+      toast.error("Please select a country");
       return;
     }
 
-    const selectedCountryData = WORLD_COUNTRIES.find(c => c.code === countryFormData.selectedCountry);
-    if (!selectedCountryData) return;
-
-    // Check if country already exists
-    if (countries.some(c => c.code === selectedCountryData.code)) {
-      toast.error('Country already exists in the system');
-      return;
-    }
-
-    const newCountry: Country = {
-      id: Date.now().toString(),
-      name: selectedCountryData.name,
-      displayName: countryFormData.manualCountryName || undefined,
-      code: selectedCountryData.code,
-      status: countryFormData.status,
-      cities: []
-    };
-
-    setCountries([...countries, newCountry].sort((a, b) => a.name.localeCompare(b.name)));
-    setIsAddCountryDialogOpen(false);
-    setCountryFormData({ selectedCountry: '', manualCountryName: '', status: 'active' });
-    toast.success('Country added successfully');
-  };
-
-  const handleAddCity = () => {
-    if (!selectedCountry) return;
-
-    // Need either a selected city from dropdown OR a manual city name
-    if (!cityFormData.selectedCity && !cityFormData.manualCityName) {
-      toast.error('Please select a city from dropdown or enter a manual city name');
-      return;
-    }
-
-    if (!cityFormData.cityCode) {
-      toast.error('Please enter a city code');
-      return;
-    }
-
-    const cityName = cityFormData.selectedCity || cityFormData.manualCityName;
-    const displayName = cityFormData.manualCityName && cityFormData.selectedCity 
-      ? cityFormData.manualCityName 
-      : undefined;
-
-    const newCity: City = {
-      id: `${selectedCountry.id}-${Date.now()}`,
-      name: cityName,
-      displayName: displayName,
-      code: cityFormData.cityCode,
-      status: cityFormData.status,
-    };
-
-    const updatedCountries = countries.map(country =>
-      country.id === selectedCountry.id
-        ? { ...country, cities: [...country.cities, newCity] }
-        : country
+    const selected = apiCountryList.find(
+      (c) => String(c.countryId) === countryFormData.selectedCountry
     );
 
-    setCountries(updatedCountries);
-    setIsAddCityDialogOpen(false);
-    setSelectedCountry(null);
-    setCityFormData({ selectedCity: '', manualCityName: '', cityCode: '', status: 'active' });
-    toast.success('City added successfully');
+    if (!selected) return;
+
+    try {
+      const payload = {
+        countryName: countryFormData.manualCountryName || selected.countryName,
+        iso2: selected.iso2,
+        iso3: selected.iso3,
+        countryCode: selected.countryCode,
+      };
+
+      await addCountry(payload);
+      toast.success("Country added successfully");
+
+      setIsAddCountryDialogOpen(false);
+      setCountryFormData({ selectedCountry: "", manualCountryName: "", status: "active" });
+
+      // Refresh countries table
+      await loadDataFromAPI();
+      await loadCountriesFromAPI();
+    } catch (err) {
+      console.error("Failed to add country:", err);
+      toast.error("Failed to add country");
+    }
   };
+
+
+  const handleAddCity = async () => {
+  if (!selectedCountry) return;
+
+  if (!cityFormData.selectedCity && !cityFormData.manualCityName) {
+    toast.error('Please select or enter a city name');
+    return;
+  }
+
+  const cityName = cityFormData.manualCityName || cityFormData.selectedCity;
+
+  try {
+    const payload = {
+      cityName,
+      postalCode: cityFormData.cityCode, // backend expects postalCode
+      countryId: Number(selectedCountry.id)
+    };
+
+    const response = await addCity(payload); // API call
+
+    toast.success("City created successfully");
+
+    // Refresh cities
+    await loadDataFromAPI();
+    await loadCitiesFromAPI();
+
+    setIsAddCityDialogOpen(false);
+    setCityFormData({
+      selectedCity: '',
+      manualCityName: '',
+      cityCode: '',
+      status: 'active'
+    });
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to add city");
+  }
+};
+
 
   const handleUpdateCityStatus = (countryId: string, cityId: string, newStatus: 'active' | 'inactive' | 'deprecated') => {
     const updatedCountries = countries.map(country =>
@@ -548,15 +575,6 @@ export const CountryCityMasterPage = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
-            onClick={handleSyncFromAPI}
-            disabled={isSyncing}
-            variant="outline"
-            className="border-[#5B9BD5]/30 text-[#5B9BD5] hover:bg-[#5B9BD5]/10"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing...' : 'Sync from API'}
-          </Button>
-          <Button
             onClick={() => setIsAddCountryDialogOpen(true)}
             style={{ background: '#5B9BD5' }}
             className="text-white"
@@ -568,7 +586,7 @@ export const CountryCityMasterPage = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="border-blue-200 bg-blue-50/50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -614,20 +632,6 @@ export const CountryCityMasterPage = () => {
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-sky-200 bg-sky-50/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-sky-600">Last Synced</p>
-                <p className="text-sm font-bold text-sky-900">{formatLastSynced(lastSynced)}</p>
-              </div>
-              <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center">
-                <Clock className="w-6 h-6 text-sky-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Search */}
@@ -646,15 +650,20 @@ export const CountryCityMasterPage = () => {
       </Card>
 
       {/* Countries Table - Desktop */}
-      <Card className="bg-white border-[#5B9BD5]/30 hidden lg:block">
-        <CardHeader className="border-b bg-gradient-to-r from-sky-50 to-blue-50" style={{ paddingBottom: "24px"}}>
-          <CardTitle style={{ color: '#5B9BD5' }}>Countries & Cities</CardTitle>
+      <Card className="bg-white border-[#5B9BD5]/30 hidden lg:block rounded-2xl">
+        <CardHeader className="border-b bg-gradient-to-r from-sky-50 to-blue-50 pb-6">
+          <CardTitle className="text-[#5B9BD5]">Countries & Cities</CardTitle>
           <CardDescription>
             {filteredCountries.length} countr{filteredCountries.length !== 1 ? 'ies' : 'y'} found
           </CardDescription>
         </CardHeader>
-        <CardContent style={{ padding: "0px" }}>
+        <CardContent className="pr-0 pl-0 pb-6">
           <div className="overflow-x-auto">
+
+            {loading && (
+              <div className="text-center py-6 text-gray-500">Loading...</div>
+            )}
+
             <Table>
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-sky-50 to-blue-50">
@@ -665,23 +674,29 @@ export const CountryCityMasterPage = () => {
                   <TableHead style={{ color: '#5B9BD5' }} className="px-6 py-4 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {filteredCountries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 px-6 text-gray-500">
+                    <TableCell colSpan={5} className="text-center py-10 px-6 text-gray-500">
                       No countries found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredCountries.map((country) => (
-                    <TableRow key={country.id} className="hover:bg-sky-50/30">
-                      <TableCell className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center flex-shrink-0">
-                            <Globe className="w-5 h-5 text-[#5B9BD5]" />
+                    <TableRow
+                      key={country.id}
+                      className="hover:bg-sky-50/30 py-6 border-b last:border-b-0"
+                    >
+                      {/* COUNTRY NAME */}
+                      <TableCell className="px-6 py-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center">
+                            <Globe className="w-6 h-6 text-[#5B9BD5]" />
                           </div>
+
                           <div className="flex flex-col">
-                            <span className="text-gray-900 font-medium">
+                            <span className="text-gray-900 font-medium text-lg">
                               {country.displayName || country.name}
                             </span>
                             {country.displayName && (
@@ -690,61 +705,73 @@ export const CountryCityMasterPage = () => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="px-6 py-4">
+
+                      {/* COUNTRY CODE */}
+                      <TableCell className="px-6 py-6">
                         <Badge variant="outline" className="border-[#5B9BD5]/30 text-[#5B9BD5] font-medium">
                           {country.code}
                         </Badge>
                       </TableCell>
-                      <TableCell className="px-6 py-4">
-                        <div className="space-y-2">
+
+                      {/* CITY LIST */}
+                      <TableCell className="px-6 py-6">
+                        <div className="space-y-4">
+
                           {country.cities.length === 0 ? (
-                            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                               <MapPin className="w-4 h-4 text-gray-400" />
                               <p className="text-sm text-gray-500 italic">No cities added yet</p>
                             </div>
                           ) : (
                             country.cities.map((city) => (
-                              <div key={city.id} className="flex items-center justify-between gap-3 p-3 bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg border border-sky-200 hover:border-sky-300 transition-colors">
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0">
+                              <div
+                                key={city.id}
+                                className="flex items-center justify-between gap-3 p-4 bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg border border-sky-200 hover:border-sky-300 transition-colors"
+                              >
+                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
                                     <MapPin className="w-4 h-4 text-[#5B9BD5]" />
                                   </div>
+
                                   <div className="flex flex-col flex-1 min-w-0">
                                     <span className="text-sm font-medium text-gray-900 truncate">
                                       {city.displayName || city.name}
                                     </span>
                                     {city.displayName && (
-                                      <span className="text-xs text-gray-500 truncate">({city.name})</span>
+                                      <span className="text-xs text-gray-500 truncate">
+                                        ({city.name})
+                                      </span>
                                     )}
                                   </div>
+
                                   <Badge variant="outline" className="text-xs border-[#5B9BD5]/30 text-[#5B9BD5] font-medium">
                                     {city.code}
                                   </Badge>
                                 </div>
+
                                 <div className="flex items-center gap-2">
                                   {getStatusBadge(city.status)}
                                   <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => handleEditCity(country, city)}
-                                    className="text-[#5B9BD5] hover:bg-white h-8 w-8 p-0"
-                                    title="Edit city"
+                                    className="text-[#5B9BD5] hover:bg-white h-9 w-9 p-0"
                                   >
-                                    <Edit2 className="w-3.5 h-3.5" />
+                                    <Edit2 className="w-4 h-4" />
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    // onClick={() => handleDeleteCity(country.id, city.id)}
-                                    className="text-red-600 hover:bg-white h-8 w-8 p-0"
-                                    title="Delete city"
+                                    className="text-red-600 hover:bg-white h-9 w-9 p-0"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Trash2 className="w-4 h-4" />
                                   </Button>
                                 </div>
                               </div>
                             ))
                           )}
+
+                          {/* ADD CITY BUTTON */}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -752,31 +779,35 @@ export const CountryCityMasterPage = () => {
                               setSelectedCountry(country);
                               setIsAddCityDialogOpen(true);
                             }}
-                            className="w-full text-[#5B9BD5] hover:bg-sky-100 border border-dashed border-sky-300 py-2"
+                            className="w-full mt-3 text-[#5B9BD5] hover:bg-sky-100 border border-dashed border-sky-300 py-3"
                           >
                             <Plus className="w-4 h-4 mr-2" />
                             Add City to {country.displayName || country.name}
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell className="px-6 py-4">{getStatusBadge(country.status)}</TableCell>
-                      <TableCell className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+
+                      {/* COUNTRY STATUS */}
+                      <TableCell className="px-6 py-6">
+                        {getStatusBadge(country.status)}
+                      </TableCell>
+
+                      {/* ACTIONS */}
+                      <TableCell className="px-6 py-6 text-right">
+                        <div className="flex items-center justify-end gap-3">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleEditCountry(country)}
                             className="text-[#5B9BD5] hover:bg-sky-50"
-                            title="Edit country"
                           >
                             <Edit2 className="w-4 h-4" />
                           </Button>
+
                           <Button
                             size="sm"
                             variant="ghost"
-                            // onClick={() => handleDeleteCountry(country.id)}
                             className="text-red-600 hover:bg-red-50"
-                            title="Delete country"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -790,6 +821,7 @@ export const CountryCityMasterPage = () => {
           </div>
         </CardContent>
       </Card>
+
 
       {/* Mobile Cards - same data & actions, single codebase */}
       <div className="space-y-4 lg:hidden">
@@ -937,11 +969,11 @@ export const CountryCityMasterPage = () => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  {WORLD_COUNTRIES.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
+                  {apiCountryList.map((country) => (
+                    <SelectItem key={country.countryId} value={String(country.countryId)}>
                       <div className="flex items-center gap-2">
                         <Globe className="w-4 h-4 text-[#5B9BD5]" />
-                        {country.name} ({country.code})
+                        {country.countryName} ({country.iso2})
                       </div>
                     </SelectItem>
                   ))}
