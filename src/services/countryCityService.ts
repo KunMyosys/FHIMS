@@ -52,5 +52,40 @@ export const addCountry = async (payload: {
   countryCode: string;
 }) => {
   const res = await axiosInstance.post("/Country", payload);
-  return res.data; // { countryId: number }
+  return res.data; 
+};
+
+// PUT: /City  (update existing city)
+export const updateCity = async (payload: {
+  cityId: number;
+  cityName: string;
+  postalCode: string;
+  countryId: number;
+}) => {
+  const res = await axiosInstance.put("/City", payload);
+  return res.data; 
+};
+
+// DELETE: /City/{id}
+export const deleteCity = async (cityId: number) => {
+  const res = await axiosInstance.delete(`/City/${cityId}`);
+  return res.data; 
+};
+
+// PUT: /Country  (update existing country)
+export const updateCountry = async (payload: {
+  countryId: number;
+  countryName: string;
+  iso2: string;
+  iso3: string;
+  countryCode: string;
+}) => {
+  const res = await axiosInstance.put("/Country", payload);
+  return res.data; 
+};
+
+// DELETE: /Country/{countryId}
+export const deleteCountry = async (countryId: number) => {
+  const res = await axiosInstance.delete(`/Country/${countryId}`);
+  return res.data; 
 };

@@ -17,6 +17,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogOverlay,
   DialogTitle,
 } from '../ui/dialog';
 import {
@@ -41,7 +42,7 @@ import {
   Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { addCity, addCountry, ApiCity, ApiCountry, getAllCities, getAllCountries, getCountriesWithCities } from "../services/countryCityService";
+import { addCity, addCountry, ApiCity, ApiCountry, deleteCity, deleteCountry, getAllCities, getAllCountries, getCountriesWithCities, updateCity, updateCountry } from "../services/countryCityService";
 
 
 interface City {
@@ -197,6 +198,12 @@ export const CountryCityMasterPage = () => {
 
   const [apiCountryList, setApiCountryList] = useState<ApiCountry[]>([]);
 
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [cityToDelete, setCityToDelete] = useState<string | null>(null);
+
+  const [isDeleteCountryOpen, setIsDeleteCountryOpen] = useState(false);
+  const [countryToDelete, setCountryToDelete] = useState<string | null>(null);
+
 
 
   // Form state for adding country
@@ -246,18 +253,19 @@ export const CountryCityMasterPage = () => {
       const mapped = apiData.map((c: any) => ({
         id: String(c.countryId),
         name: c.countryName,
-        displayName: undefined, // backend doesn't provide this
-        code: c.iso2,           // using ISO2 as country code (your UI expects 2 letters)
-        status: "active",       // backend has no status → default active
+        displayName: undefined,
+        code: c.iso2,          
+        iso3: c.iso3,
+        countryCode: c.countryCode,
+        status: "active",
         cities: c.cities.map((city: any) => ({
           id: String(city.cityId),
           name: city.cityName,
-          displayName: undefined, // backend doesn't provide
-          code: "TEST",           // backend does not return city code → placeholder
-          status: "active",       // default active
+          displayName: undefined,
+          code: city.postalCode || "",
+          status: "active",
         })),
       }));
-
       setCountries(mapped);
     } catch (error) {
       console.error("Failed to load countries:", error);
@@ -383,7 +391,67 @@ export const CountryCityMasterPage = () => {
     console.error(err);
     toast.error("Failed to add city");
   }
-};
+  };
+
+
+  const handleDeleteCity = (cityId: string) => {
+    setCityToDelete(cityId);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteCity = async () => {
+    if (!cityToDelete) return;
+
+    try {
+      const res = await deleteCity(Number(cityToDelete));
+
+      if (res.deleted) {
+        toast.success("City deleted successfully");
+      } else {
+        toast.error("Failed to delete city");
+      }
+
+      await loadDataFromAPI();
+      await loadCitiesFromAPI();
+
+    } catch (err) {
+      console.error("Delete failed:", err);
+      toast.error("Failed to delete city");
+    }
+
+    setIsDeleteConfirmOpen(false);
+    setCityToDelete(null);
+  };
+
+  const handleDeleteCountry = (countryId: string) => {
+    setCountryToDelete(countryId);
+    setIsDeleteCountryOpen(true);
+  };
+
+  const confirmDeleteCountry = async () => {
+    if (!countryToDelete) return;
+
+    try {
+      const res = await deleteCountry(Number(countryToDelete));
+
+      if (res.deleted) {
+        toast.success("Country deleted successfully");
+      } else {
+        toast.error("Failed to delete country");
+      }
+
+      await loadDataFromAPI();
+      await loadCountriesFromAPI();
+
+    } catch (err) {
+      console.error("Failed to delete country:", err);
+      toast.error("Failed to delete country");
+    }
+
+    setIsDeleteCountryOpen(false);
+    setCountryToDelete(null);
+  };
+
 
 
   const handleUpdateCityStatus = (countryId: string, cityId: string, newStatus: 'active' | 'inactive' | 'deprecated') => {
@@ -402,42 +470,9 @@ export const CountryCityMasterPage = () => {
     toast.success('City status updated successfully');
   };
 
-  const handleToggleCountryStatus = (countryId: string) => {
-    const updatedCountries = countries.map(country =>
-      country.id === countryId
-        ? { ...country, status: country.status === 'active' ? 'inactive' : 'active' as 'active' | 'inactive' }
-        : country
-    );
 
-    setCountries(updatedCountries);
-    toast.success('Country status updated successfully');
-  };
 
-  // const handleDeleteCity = (countryId: string, cityId: string) => {
-  //   if (!confirm('Are you sure you want to delete this city?')) return;
 
-  //   const updatedCountries = countries.map(country =>
-  //     country.id === countryId
-  //       ? { ...country, cities: country.cities.filter(city => city.id !== cityId) }
-  //       : country
-  //   );
-
-  //   setCountries(updatedCountries);
-  //   toast.success('City deleted successfully');
-  // };
-
-  // const handleDeleteCountry = (countryId: string) => {
-  //   const country = countries.find(c => c.id === countryId);
-  //   if (country && country.cities.length > 0) {
-  //     toast.error('Cannot delete country with existing cities. Please remove all cities first.');
-  //     return;
-  //   }
-
-  //   if (!confirm('Are you sure you want to delete this country?')) return;
-
-  //   setCountries(countries.filter(c => c.id !== countryId));
-  //   toast.success('Country deleted successfully');
-  // };
 
   const handleEditCountry = (country: Country) => {
     setEditingCountry(country);
@@ -450,25 +485,41 @@ export const CountryCityMasterPage = () => {
     setIsEditCountryDialogOpen(true);
   };
 
-  const handleUpdateCountry = () => {
+  const handleUpdateCountry = async () => {
     if (!editingCountry) return;
 
-    const updatedCountries = countries.map(country =>
-      country.id === editingCountry.id
-        ? {
-            ...country,
-            displayName: editCountryFormData.displayName || undefined,
-            status: editCountryFormData.status,
-          }
-        : country
-    );
+    try {
+      const payload = {
+        countryId: Number(editingCountry.id),
+        countryName: editCountryFormData.displayName || editCountryFormData.name,
+        iso2: editingCountry.code,   
+        iso3: editingCountry.code + "X", 
+        countryCode: editingCountry.code, 
+      };
 
-    setCountries(updatedCountries);
-    setIsEditCountryDialogOpen(false);
-    setEditingCountry(null);
-    setEditCountryFormData({ name: '', displayName: '', code: '', status: 'active' });
-    toast.success('Country updated successfully');
+      const res = await updateCountry(payload);
+
+      if (res.updated) {
+        toast.success("Country updated successfully");
+      } else {
+        toast.error("Failed to update country");
+      }
+
+      // refresh
+      await loadDataFromAPI();
+      await loadCountriesFromAPI();
+
+      // cleanup
+      setIsEditCountryDialogOpen(false);
+      setEditingCountry(null);
+      setEditCountryFormData({ name: "", displayName: "", code: "", status: "active" });
+
+    } catch (err) {
+      console.error("Update failed:", err);
+      toast.error("Failed to update country");
+    }
   };
+
 
   const handleEditCity = (country: Country, city: City) => {
     setSelectedCountry(country);
@@ -482,51 +533,42 @@ export const CountryCityMasterPage = () => {
     setIsEditCityDialogOpen(true);
   };
 
-  const handleUpdateCity = () => {
-    if (!editingCity || !selectedCountry) return;
+  const handleUpdateCity = async () => {
+  if (!editingCity || !selectedCountry) return;
 
-    if (!editCityFormData.code) {
-      toast.error('Please enter a city code');
-      return;
+  try {
+    const payload = {
+      cityId: Number(editingCity.id),
+      cityName: editCityFormData.displayName || editCityFormData.name,
+      postalCode: editCityFormData.code,   // backend uses postalCode
+      countryId: Number(selectedCountry.id)
+    };
+
+    const res = await updateCity(payload);
+
+    if (res.updated) {
+      toast.success("City updated successfully");
+    } else {
+      toast.error("City update failed");
     }
 
-    const updatedCountries = countries.map(country =>
-      country.id === selectedCountry.id
-        ? {
-            ...country,
-            cities: country.cities.map(city =>
-              city.id === editingCity.id
-                ? {
-                    ...city,
-                    displayName: editCityFormData.displayName || undefined,
-                    code: editCityFormData.code,
-                    status: editCityFormData.status,
-                  }
-                : city
-            )
-          }
-        : country
-    );
+    // Refresh fresh data
+    await loadDataFromAPI();
+    await loadCitiesFromAPI();
 
-    setCountries(updatedCountries);
+    // Close dialog & reset
     setIsEditCityDialogOpen(false);
     setEditingCity(null);
     setSelectedCountry(null);
-    setEditCityFormData({ name: '', displayName: '', code: '', status: 'active' });
-    toast.success('City updated successfully');
+    setEditCityFormData({ name: "", displayName: "", code: "", status: "active" });
+
+  } catch (err) {
+    console.error("Failed to update city:", err);
+    toast.error("Failed to update city");
+  }
   };
 
-  const handleSyncFromAPI = () => {
-    setIsSyncing(true);
-    toast.info('Syncing countries and cities from API...');
-    
-    // Simulate API call
-    setTimeout(() => {
-      setLastSynced(new Date());
-      setIsSyncing(false);
-      toast.success('Successfully synced all countries and cities from API');
-    }, 2000);
-  };
+ 
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
@@ -762,10 +804,12 @@ export const CountryCityMasterPage = () => {
                                   <Button
                                     size="sm"
                                     variant="ghost"
+                                    onClick={() => handleDeleteCity(city.id)}
                                     className="text-red-600 hover:bg-white h-9 w-9 p-0"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
+
                                 </div>
                               </div>
                             ))
@@ -807,6 +851,7 @@ export const CountryCityMasterPage = () => {
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => handleDeleteCountry(country.id)}
                             className="text-red-600 hover:bg-red-50"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1384,6 +1429,65 @@ export const CountryCityMasterPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete City Dialog */}
+      <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen} modal={false}>
+        <DialogOverlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this city? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteConfirmOpen(false)}
+            >
+              No
+            </Button>
+
+            <Button
+              style={{ background: "#c6110bff" }}
+              className="text-white"
+              onClick={confirmDeleteCity}
+            >
+              Yes, Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Country Dialog */}
+      <Dialog open={isDeleteCountryOpen} onOpenChange={setIsDeleteCountryOpen} modal={false}>
+        <DialogOverlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
+        <DialogContent className="sm:max-w-[400px] z-50">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this country? All its cities will be removed. 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteCountryOpen(false)}>
+              No
+            </Button>
+
+            <Button
+              style={{ background: "#c6110bff" }}
+              className="text-white"
+              onClick={confirmDeleteCountry}
+            >
+              Yes, Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
