@@ -279,7 +279,7 @@ const menuCategories: MenuCategory[] = [
         iconColor: 'text-orange-600',
         iconBg: 'bg-orange-50',
         path: 'venue-master', 
-        moduleName: 'venue-master'
+        moduleName: 'venue-master' 
       },
       { 
         label: 'Document Master', 
