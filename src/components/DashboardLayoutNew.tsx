@@ -302,7 +302,7 @@ const menuCategories: MenuCategory[] = [
         icon: <Briefcase className="w-4 h-4" />, 
         iconColor: 'text-blue-600',
         iconBg: 'bg-blue-50',
-        path: 'to-type-master', 
+        path: 'tour-operator-type', 
         moduleName: 'to-type-master'
       },
       { 
