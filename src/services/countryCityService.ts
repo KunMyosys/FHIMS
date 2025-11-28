@@ -3,7 +3,7 @@ import axiosInstance from "./axiosInstance";
 export interface ApiCity {
   cityId: number;
   cityName: string;
-  postalCode: string;
+  cityCode: string;
   countryId: number;
 }
 
@@ -31,7 +31,7 @@ export const getAllCities = async () => {
 // POST: /City
 export const addCity = async (payload: {
   cityName: string;
-  postalCode: string; 
+  cityCode: string; 
   countryId: number;
 }) => {
   const res = await axiosInstance.post("/City", payload);
@@ -59,7 +59,7 @@ export const addCountry = async (payload: {
 export const updateCity = async (payload: {
   cityId: number;
   cityName: string;
-  postalCode: string;
+  cityCode: string;
   countryId: number;
 }) => {
   const res = await axiosInstance.put("/City", payload);

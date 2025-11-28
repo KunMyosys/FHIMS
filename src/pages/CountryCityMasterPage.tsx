@@ -262,7 +262,7 @@ export const CountryCityMasterPage = () => {
           id: String(city.cityId),
           name: city.cityName,
           displayName: undefined,
-          code: city.postalCode || "",
+          code: city.cityCode || "",
           status: "active",
         })),
       }));
@@ -367,7 +367,7 @@ export const CountryCityMasterPage = () => {
   try {
     const payload = {
       cityName,
-      postalCode: cityFormData.cityCode, // backend expects postalCode
+      cityCode: cityFormData.cityCode, // backend expects postalCode
       countryId: Number(selectedCountry.id)
     };
 
@@ -540,7 +540,7 @@ export const CountryCityMasterPage = () => {
     const payload = {
       cityId: Number(editingCity.id),
       cityName: editCityFormData.displayName || editCityFormData.name,
-      postalCode: editCityFormData.code,   // backend uses postalCode
+      cityCode: editCityFormData.code,   // backend uses postalCode
       countryId: Number(selectedCountry.id)
     };
 
