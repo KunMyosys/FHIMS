@@ -31,12 +31,23 @@ export const getAllCities = async () => {
 // POST: /City
 export const addCity = async (payload: {
   cityName: string;
-  cityCode: string; 
+  cityCode: string;
+  postalCode: string;
   countryId: number;
 }) => {
-  const res = await axiosInstance.post("/City", payload);
-  return res.data; 
+  const finalPayload = {
+    ...payload,
+    createdBy: 1  // fixed static
+  };
+
+  console.log("Sending payload to backend:", finalPayload);
+
+  const res = await axiosInstance.post("/City", finalPayload);
+  return res.data;
 };
+
+
+
 
 // GET all countries
 export const getAllCountries = async (): Promise<ApiCountry[]> => {
@@ -60,11 +71,22 @@ export const updateCity = async (payload: {
   cityId: number;
   cityName: string;
   cityCode: string;
+  postalCode: string;
   countryId: number;
+  createdBy: number;
+  updatedBy: number;
 }) => {
-  const res = await axiosInstance.put("/City", payload);
-  return res.data; 
+  const finalPayload = {
+    ...payload,
+    createdBy: payload.createdBy ?? 1,
+    updatedBy: payload.updatedBy ?? 1
+  };
+
+  const res = await axiosInstance.post("/City", finalPayload);
+  return res.data;
 };
+
+
 
 // DELETE: /City/{id}
 export const deleteCity = async (cityId: number) => {
@@ -87,5 +109,11 @@ export const updateCountry = async (payload: {
 // DELETE: /Country/{countryId}
 export const deleteCountry = async (countryId: number) => {
   const res = await axiosInstance.delete(`/Country/${countryId}`);
+  return res.data; 
+};
+
+// PUT: /Country/{countryId}/inactive
+export const inactivateCountry = async (countryId: number) => {
+  const res = await axiosInstance.put(`/Country/${countryId}/inactive`);
   return res.data; 
 };
