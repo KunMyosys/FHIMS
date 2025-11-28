@@ -23,6 +23,8 @@ import { UserManagementPage } from "../pages/UserManagementPage";
 import { CountryCityMasterPage } from "../pages/CountryCityMasterPage";
 import { DocumentMasterPage } from "../pages/DocumentMasterPage";
 import { PortMasterPage } from "../pages/PortMasterPage";
+import { VenueMasterEnhanced } from "../pages/VenueMasterEnhanced";
+import { TourOperatorType } from "../pages/TourOperatorType";
 
 /* ✅ Protected route wrapper */
 const ProtectedRoute = ({ children }: { children: React.JSX.Element }) => {
@@ -193,6 +195,34 @@ const AppRoutes = () => {
               onNavigate={handleNavigate}
             >
               <PortMasterPage />
+            </DashboardLayoutNew>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/venue-master"
+        element={
+          <ProtectedRoute>
+            <DashboardLayoutNew
+              currentPage="venue-master"
+              onNavigate={handleNavigate}
+            >
+              <VenueMasterEnhanced />
+            </DashboardLayoutNew>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/tour-operator-type"
+        element={
+          <ProtectedRoute>
+            <DashboardLayoutNew
+              currentPage="tour-operator-type"
+              onNavigate={handleNavigate}
+            >
+              <TourOperatorType />
             </DashboardLayoutNew>
           </ProtectedRoute>
         }
